@@ -73,7 +73,7 @@ class MobFactory {
   }
   generateMob() {
     const health = 1;
-    const movementSpeed = 2;
+    const movementSpeed = 10;
     const mob = new Mobs(health, movementSpeed);
     this.mob.push(mob);
   }
@@ -107,19 +107,84 @@ class TowerDefenceGame {
   isPlayerAlive() {
     return this.player.health > 0;
   }
-  towerAttackMob() {
-    const $targetMob = $("#gameboard > #mob").eq(this.currentActiveMobIndex);
-    /* if (){
-
-    }*/
+  displayPlayerHealth() {
+    const $healthInfo = $("#topbar > h2");
+    $healthInfo.text("Health:" + this.player.health);
   }
-  mobMove() {
+  placeMob() {
     const $mobPathway = $("#gameboard > #rows > #path");
+    const startingPos = $mobPathway.eq(0).position();
+    const startLeft = startingPos.left;
+    const startTop = startingPos.top + 27 - 10; // 27 is the center of the column div. 10 is half of the mob.
+    //let $mobPos = $("#gameboard > #mob");
+    const $selectGameboard = $("#gameboard");
+    const $mobDiv = $("<div></div>");
+    $mobDiv.attr("id", "mob");
+    $mobDiv.css({ top: startTop + "px", left: startLeft + "px" });
+    $selectGameboard.prepend($mobDiv);
+  }
+  placeTower() {
+    const $selectColumn = $("#gameboard > #rows > .columns");
+    for (let i = 0; i < this.numberOfTower; i++) {
+      const $towerImg = $(
+        "<img src='./img/tower.png' width='50px' height='50px'>"
+      );
+      const $tmp = $selectColumn.eq(this.towerArray[i]).position();
+      $selectColumn
+        .eq(this.towerArray[i])
+        .append($towerImg)
+        .click(function () {
+          const $tmpRadius = $("<div></div>").attr("id", "radius");
+          $tmpRadius.css({
+            "margin-top": $tmp.top - 38 + "px",
+            "margin-left": $tmp.left - 38 + "px",
+            display: "block",
+          });
+          $tmpRadius.animate({ display: "none" });
+          $("#gameboard").prepend($tmpRadius);
 
-    let $mobPos = $("#mob");
-    $mobPos.animate({ top: rect.top + "px", left: rect.left + "px" });
-    for (let i = 0; i < makePath().$pathArray2.length; i++) {
-      //$pathway.eq(i).text("X");
+          //console.log("Top: " + $tmp.top + " Left: " + $tmp.left);
+        });
+      $selectColumn.eq(this.towerArray[i]).attr("id", "tower");
+    }
+  }
+  towerAttackMob(mob) {
+    const $targetMob = $("#gameboard > #mob").eq(mob);
+    const $targetMobPosition = $targetMob.position();
+    console.log($targetMobPosition);
+    while (this.mobFactory.getMob(mob).health > 0) {
+      for (let i = 0; i < this.towerArray.length; i++) {
+        const $getTower = $("#gameboard > #rows > #tower");
+        const getTowerPos = $getTower.eq(i).position();
+        console.log("i: " + i + " - " + getTowerPos);
+        console.log(getTowerPos.top);
+        console.log(getTowerPos.left);
+      }
+      /* console.log(
+      i + " - Top: " + getTowerPos.top + " Left: " + getTowerPos.left
+    ); */
+      this.mobFactory.getMob(mob).health--;
+    }
+
+    /* if ($targetMob.top+10>=){
+
+    } */
+  }
+  mobMove(pathArray) {
+    const $mobPathway = $("#gameboard > #rows > #path");
+    const startingPos = $mobPathway.eq(0).position();
+    const startLeft = startingPos.left;
+    const startTop = startingPos.top + 27 - 10; // 27 is the center of the column div. 10 is half of the mob.
+    const endPos = $mobPathway.eq(pathArray.length - 1).position();
+    const endLeft = endPos.left + 55;
+    let $mobPos = $("#gameboard > #mob");
+    //$mobPos.animate({ top: startTop + "px", left: startLeft + "px" });
+    for (
+      let i = 0;
+      i <= endLeft;
+      i += this.mobFactory.getMob(this.currentActiveMobIndex).movementSpeed
+    ) {
+      $mobPos.animate({ top: startTop + "px", left: startLeft + i + "px" });
     }
   }
   makePath(pathArray) {
@@ -153,10 +218,15 @@ ready(function () {
   const $towerArray = [31, 34, 38];
   const towerDefence = new TowerDefenceGame(
     "Benson",
-    6,
+    1,
     3,
     $towerArray,
     $pathArray
   );
   towerDefence.setGameBoard();
+  towerDefence.placeMob();
+  towerDefence.mobMove($pathArray);
+  towerDefence.placeTower();
+  towerDefence.displayPlayerHealth();
+  towerDefence.towerAttackMob(0);
 });
