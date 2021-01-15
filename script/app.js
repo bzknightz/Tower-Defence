@@ -20,16 +20,16 @@ class Objects_ {
   constructor(health) {
     this.health = health;
   }
+  damageHealth(points) {
+    this.health -= points;
+    return this.health;
+  }
 }
 class Player extends Objects_ {
   constructor(name, health, credits) {
     super(health);
     this.name = name;
     this.credits = credits;
-  }
-  damageHealth(points) {
-    this.health -= points;
-    return this.health;
   }
 }
 class Tower {
@@ -40,7 +40,7 @@ class Tower {
     this.attackSpeed = attackSpeed;
   }
   attack(enemy) {
-    const enemyHealth = enemy.health(this.firepower);
+    const enemyHealth = enemy.damageHealth(this.firepower);
   }
 }
 class TowerFactory {
@@ -72,7 +72,7 @@ class MobFactory {
     this.mob = [];
   }
   generateMob() {
-    const health = 1;
+    const health = Math.floor(Math.random() * 100) + 1;
     const movementSpeed = 10;
     const mob = new Mobs(health, movementSpeed);
     this.mob.push(mob);
@@ -84,7 +84,7 @@ class MobFactory {
   }
 }
 class TowerDefenceGame {
-  constructor(playerName, numberOfMobs, numberOfTower, towerArray, pathArray) {
+  constructor(playerName, numberOfMobs, towerArray, pathArray) {
     this.playerName = playerName;
     this.player = new Player(this.playerName, 10, 0);
     this.numberOfMobs = numberOfMobs;
@@ -92,12 +92,11 @@ class TowerDefenceGame {
     for (let i = 0; i < this.numberOfMobs; i++) {
       this.mobFactory.generateMob();
     }
-    this.numberOfTower = numberOfTower;
     this.towerFactory = new TowerFactory();
-    for (let i = 0; i < this.numberOfTower; i++) {
+    this.towerArray = towerArray;
+    for (let i = 0; i < this.towerArray.length; i++) {
       this.towerFactory.generateTower();
     }
-    this.towerArray = towerArray;
     this.pathArray = pathArray;
     this.currentActiveMobIndex = 0;
   }
@@ -109,7 +108,7 @@ class TowerDefenceGame {
   }
   displayPlayerHealth() {
     const $healthInfo = $("#topbar > h2");
-    $healthInfo.text("Health:" + this.player.health);
+    $healthInfo.text(this.playerName + "'s health: " + this.player.health);
   }
   placeMob() {
     const $mobPathway = $("#gameboard > #rows > #path");
@@ -125,66 +124,127 @@ class TowerDefenceGame {
   }
   placeTower() {
     const $selectColumn = $("#gameboard > #rows > .columns");
-    for (let i = 0; i < this.numberOfTower; i++) {
+    for (let i = 0; i < this.towerArray.length; i++) {
       const $towerImg = $(
         "<img src='./img/tower.png' width='50px' height='50px'>"
       );
       const $tmp = $selectColumn.eq(this.towerArray[i]).position();
+      const $tmpRadius = $("<div></div>").attr("id", "radius");
+      $tmpRadius.css({
+        "margin-top": $tmp.top - 38 + "px",
+        "margin-left": $tmp.left - 38 + "px",
+      });
       $selectColumn
         .eq(this.towerArray[i])
         .append($towerImg)
         .click(function () {
-          const $tmpRadius = $("<div></div>").attr("id", "radius");
-          $tmpRadius.css({
-            "margin-top": $tmp.top - 38 + "px",
-            "margin-left": $tmp.left - 38 + "px",
-            display: "block",
-          });
-          $tmpRadius.animate({ display: "none" });
-          $("#gameboard").prepend($tmpRadius);
-
-          //console.log("Top: " + $tmp.top + " Left: " + $tmp.left);
+          $tmpRadius.css({ display: "block" });
+          setTimeout(function () {
+            $tmpRadius.css({ display: "none" });
+          }, 5000);
         });
       $selectColumn.eq(this.towerArray[i]).attr("id", "tower");
+      $("#gameboard > #rows").eq(0).before($tmpRadius);
     }
   }
-  towerAttackMob(mob) {
+  towerAttackMob(mob, startTop, startLeft) {
     const $targetMob = $("#gameboard > #mob").eq(mob);
-    const $targetMobPosition = $targetMob.position();
-    console.log($targetMobPosition);
-    while (this.mobFactory.getMob(mob).health > 0) {
-      for (let i = 0; i < this.towerArray.length; i++) {
-        const $getTower = $("#gameboard > #rows > #tower");
+    const $getTower = $("#gameboard > #rows > #tower");
+    const $getRadius = $("#gameboard > #radius");
+    const constant = 38;
+
+    for (let i = 0; i < this.towerArray.length; i++) {
+      if (this.mobFactory.getMob(mob).health > 0) {
         const getTowerPos = $getTower.eq(i).position();
-        console.log("i: " + i + " - " + getTowerPos);
-        console.log(getTowerPos.top);
-        console.log(getTowerPos.left);
+        const towerPosTop_offsetNeg = getTowerPos.top - constant;
+        const towerPosLeft_offsetNeg = getTowerPos.left - constant;
+        const towerPosTop_offsetPos = getTowerPos.top + constant;
+        const towerPosLeft_offsetPos = getTowerPos.left + constant;
+        if (
+          startLeft >= towerPosLeft_offsetNeg &&
+          startLeft <= towerPosLeft_offsetPos
+        ) {
+          console.log(startLeft);
+          console.log(i + " = towerPosLeft_offsetNeg" + towerPosLeft_offsetNeg);
+          console.log(i + " = towerPosLeft_offsetPos" + towerPosLeft_offsetPos);
+          console.log("health: " + this.mobFactory.getMob(mob).health);
+          this.mobFactory.getMob(mob).health--;
+          $getRadius.eq(i).css({
+            "background-color": "rgba(241, 90, 34, 0.5)",
+            display: "block",
+          });
+          setTimeout(function () {
+            $getRadius.eq(i).css({
+              "background-color": "rgba(138, 138, 138, 0.5)",
+              display: "none",
+            });
+          }, 5000);
+        } else {
+          /*  $getRadius.eq(i).css({
+            "background-color": "rgba(138, 138, 138, 0.5)",
+            display: "none",
+          }); */
+        }
+      } else {
+        setTimeout(function () {
+          $targetMob.hide();
+        }, 5000);
       }
-      /* console.log(
-      i + " - Top: " + getTowerPos.top + " Left: " + getTowerPos.left
-    ); */
-      this.mobFactory.getMob(mob).health--;
     }
-
-    /* if ($targetMob.top+10>=){
-
-    } */
   }
   mobMove(pathArray) {
     const $mobPathway = $("#gameboard > #rows > #path");
-    const startingPos = $mobPathway.eq(0).position();
+    const startingPos = $mobPathway.eq(this.currentActiveMobIndex).position();
     const startLeft = startingPos.left;
     const startTop = startingPos.top + 27 - 10; // 27 is the center of the column div. 10 is half of the mob.
     const endPos = $mobPathway.eq(pathArray.length - 1).position();
     const endLeft = endPos.left + 55;
     let $mobPos = $("#gameboard > #mob");
-    //$mobPos.animate({ top: startTop + "px", left: startLeft + "px" });
     for (
       let i = 0;
       i <= endLeft;
       i += this.mobFactory.getMob(this.currentActiveMobIndex).movementSpeed
     ) {
-      $mobPos.animate({ top: startTop + "px", left: startLeft + i + "px" });
+      const startLeftI = startLeft + i;
+      $mobPos.animate({ top: startTop + "px", left: startLeftI + "px" });
+      this.towerAttackMob(this.currentActiveMobIndex, startTop, startLeftI);
+      if (i == endLeft) {
+        this.player.health -= this.mobFactory.getMob(
+          this.currentActiveMobIndex
+        ).health;
+        this.displayPlayerHealth();
+      }
+      if (!this.isPlayerAlive()) {
+        setTimeout(function () {
+          alert("You have lost the game!");
+          let responds = prompt("Restart the game?", "Yes");
+
+          if (
+            responds == null ||
+            responds == "" ||
+            responds == "No" ||
+            responds == "no"
+          ) {
+          } else {
+            location.reload();
+          }
+        }, 10000);
+      }
+    }
+    if (this.isPlayerAlive()) {
+      setTimeout(function () {
+        alert("You have won the game!");
+        let responds = prompt("Restart the game?", "Yes");
+        if (
+          responds == null ||
+          responds == "" ||
+          responds == "No" ||
+          responds == "no"
+        ) {
+        } else {
+          location.reload();
+        }
+      }, 10000);
     }
   }
   makePath(pathArray) {
@@ -215,18 +275,50 @@ class TowerDefenceGame {
 
 ready(function () {
   const $pathArray = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
-  const $towerArray = [31, 34, 38];
+  let getName = prompt("Please enter your name", "");
+  if (getName == null || getName == "") {
+    getName = prompt("Please enter your name", "");
+  }
+  alert(
+    "Warning! The enemy has random number for health! Place your towers carefully!"
+  );
+  let playerChooseTower = prompt(
+    "Please enter grid numbers where you want to put your towers. \nBetween 0 to 19 and 30 to 99.\nYou may put unlimited* towers, seperate them by comma.",
+    "31,32,35,38"
+  );
+  if (
+    playerChooseTower == null ||
+    playerChooseTower == "" ||
+    playerChooseTower.indexOf(",") <= -1
+  ) {
+    playerChooseTower = prompt(
+      "Please enter grid numbers where you want to put your towers. \nBetween 0 to 19 and 30 to 99.\nYou may put unlimited* towers, seperate them by comma.",
+      "31,32,35,38"
+    );
+  }
+  let $towerArray = playerChooseTower.split(",");
+  for (let i = 0; i < $towerArray.length; i++) {
+    for (let y = 0; y < $pathArray.length; y++) {
+      if ($towerArray[i] == $pathArray[y]) {
+        playerChooseTower = prompt(
+          "Please enter grid numbers where you want to put your towers. \nBetween 0 to 19 and 30 to 99.\nYou may put unlimited* towers, seperate them by comma.",
+          "31,32,35,38"
+        );
+        $towerArray = playerChooseTower.split(",");
+      }
+    }
+  }
   const towerDefence = new TowerDefenceGame(
-    "Benson",
+    getName,
     1,
-    3,
     $towerArray,
     $pathArray
   );
   towerDefence.setGameBoard();
   towerDefence.placeMob();
-  towerDefence.mobMove($pathArray);
-  towerDefence.placeTower();
+
   towerDefence.displayPlayerHealth();
-  towerDefence.towerAttackMob(0);
+  //towerDefence.towerAttackMob(0);
+  towerDefence.placeTower();
+  towerDefence.mobMove($pathArray);
 });

@@ -45,7 +45,7 @@
 #radius {
   position: fixed;
   display: none;
-  border-radius: 50%;
+  /*border-radius: 50%;*/
   background-color: rgba(138, 138, 138, 0.5);
   width: 130px;
   max-width: 130px;
