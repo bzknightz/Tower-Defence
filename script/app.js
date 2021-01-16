@@ -206,8 +206,13 @@ class TowerDefenceGame {
       i += this.mobFactory.getMob(this.currentActiveMobIndex).movementSpeed
     ) {
       const startLeftI = startLeft + i;
-      $mobPos.animate({ top: startTop + "px", left: startLeftI + "px" });
-      this.towerAttackMob(this.currentActiveMobIndex, startTop, startLeftI);
+      if (this.mobFactory.getMob(this.currentActiveMobIndex).health > 0) {
+        $mobPos.animate({ left: "+=" + i + "px" }, "300");
+        this.towerAttackMob(this.currentActiveMobIndex, startTop, startLeftI);
+      } else {
+        //$mobPos.css({ display: "none" }).delay("100");
+        $mobPos.hide(10);
+      }
       if (i == endLeft) {
         this.player.health -= this.mobFactory.getMob(
           this.currentActiveMobIndex
