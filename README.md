@@ -26,4 +26,4 @@ You can play my game via https://bzknightz.github.io/Tower-Defence/index.html. H
 
 ## API
 
-space holder
+https://sv443.net/jokeapi/v2/joke/Any?type=single
